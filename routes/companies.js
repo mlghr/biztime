@@ -1,31 +1,36 @@
-const { Router } = require("express");
-const ExpressError = require("../../express-pg-intro-demo/VideoCode/pg-intro/expressError");
-
 const express = require("express");
-const error = require("../expressError");
-const router = express.Router();
+const ExpressError = require("../expressError");
 const db = require("../db");
 
-router.get('/', async (req, res, next) => {
+let router = new express.Router();
+
+  
+router.get("/", async function (req, res, next) {
     try {
-      const results = await db.query(`SELECT * FROM users`);
-      return res.json({ users: results.rows })
-    } catch (e) {
-      return next(e);
+      const result = await db.query(
+            `SELECT code, name 
+             FROM companies 
+             ORDER BY name`
+      );
+      return res.json({"companies": result.rows});
     }
-  })
-  router.get('/:code', async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const results = await db.query('SELECT * FROM users WHERE code = $1', [code])
-      if (results.rows.length === 0) {
-        throw new ExpressError(`Can't find user with code of ${code}`, 404)
-      }
-      return res.send({ companies: results.rows[0] })
-    } catch (e) {
-      return next(e)
+    catch (err) {
+      return next(err);
     }
-  })
+  });
+
+router.get('/:code', async (req, res, next) => {
+  try {
+    const { code } = req.params;
+    const results = await db.query('SELECT * FROM users WHERE code = $1', [code])
+    if (results.rows.length === 0) {
+      throw new ExpressError(`Can't find user with code of ${code}`, 404)
+    }
+    return res.send({ company: results.rows[0] })
+  } catch (e) {
+    return next(e)
+  }
+})
   
   router.get('/search', async (req, res, next) => {
     try {
@@ -40,7 +45,7 @@ router.get('/', async (req, res, next) => {
   router.post('/', async (req, res, next) => {
     try {
       const { name, type } = req.body;
-      const results = await db.query('INSERT INTO users (name, type) VALUES ($1, $2) RETURNING id, name, type', [name, type]);
+      const results = await db.query('INSERT INTO companies (name, type) VALUES ($1, $2) RETURNING id, name, type', [name, type]);
       return res.status(201).json({ user: results.rows[0] })
     } catch (e) {
       return next(e)
